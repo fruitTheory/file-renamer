@@ -1,1 +1,2 @@
 # file-renamer
+Wip of a file renaming tool that can rename all files in a directory. Right now it just gives a name and extension option, if there's multiple files it will increment by 1. For ex; filename1, filename2, etc. There will be a selected files option added later. It also can get the information about a directory, specifically the file and folder sizes. Right now supported memory types or bytes, KB, MB, and GB
