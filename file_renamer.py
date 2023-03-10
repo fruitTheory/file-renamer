@@ -46,11 +46,9 @@ def error_message():
 def file_rename():
     
     file_number = 0
-    
     file_new_name = file_name_var.get()
     file_type = file_ext_var.get()
-    directory = selected_dir.get() + "//"
-    
+    directory = selected_dir.get() + "//"    
     new_name_list = []
     
     # To-do: if file name is changed while program is running can get confused whether the file is there or not
