@@ -1,7 +1,6 @@
 import os
 import tkinter as tk
 from tkinter import filedialog
-# from tkinter import StringVar
 from tkinter import *
 from tkinter import messagebox
 # from send2trash import send2trash // no module found issue
@@ -11,7 +10,6 @@ from tkinter import messagebox
 root = tk.Tk()
 root.title("File Renamer")
 root.geometry("400x200")
-
 
 # Create 2 StringVar objects
 file_name_var = StringVar()
@@ -40,7 +38,6 @@ dir_text.pack()
 directory_button = Button(root, text="Select Directory", command=lambda: selected_dir.set(filedialog.askdirectory()))
 directory_button.pack()
 
-
 # Show user a message
 def error_message():
     result = messagebox.showinfo("Error", "Please fill in all 3 fields", parent=root)
@@ -56,8 +53,7 @@ def file_rename():
     
     new_name_list = []
     
-    # NOTE: if file name is changed while program is running it gets confused of whether the file is there or not
-    # Check this out
+    # To-do: if file name is changed while program is running can get confused whether the file is there or not
     if file_name_var.get() == "" or file_ext_var.get() == "" or selected_dir.get() == "":
         error_message()
         raise ValueError("Missing text fields")
@@ -65,18 +61,9 @@ def file_rename():
     else:
     
         for file in os.listdir(directory):
-
-            #print(directory)
-            #print(file_new_name+file_type)
             
             file_number +=1
-            '''
-            # This will print each file in the directory and in what order it is in.
-            print("file number "+str(file_number)+":")
-            print(file)
-            print()
-            '''
-            
+
             old_file_path = os.path.join(directory+file)
             
             filepath_replace = old_file_path.replace(file, file_new_name) 
@@ -85,16 +72,12 @@ def file_rename():
 
             # Appends new names to empty list
             new_name_list.append(new_file_path)
-            
-            #print(old_file_path)
-            #print(new_file_path)
-
+         
             #WARNING: renames the files
             os.rename(old_file_path, new_file_path)
             
-            # break
-            
     return new_name_list
+
 print("Active")
 
 def file_info():
@@ -131,18 +114,14 @@ def file_info():
         size_length = len(str(file_size)) # get number of digits in sequence
 
         if size_length <= 3:
-            # print("leave as bytes")
             is_bytes = True
         elif size_length >= 4 and size_length < 7: # greater than thousand less than a million
-            # print("convert to kb")
             file_size = int(file_size/1024)
             is_kb = True
         elif size_length >= 7 and size_length < 10: # greater than million less than bilion
-            # print("convert to mb")
             file_size = int((file_size/1024)/1024)
             is_mb = True
         elif size_length >= 10 and size_length < 13: # greater than a billion less than a trillion
-            # print("convert to gb")
             file_size = round(((file_size/1024)/1024)/1024, 2)
             is_gb = True
         else:
@@ -159,10 +138,8 @@ def file_info():
 
         file_count += 1
 
-
     '''
     functionality splits here -- gathering folder names and sizes
-    
     '''
 
     total_size = 0
@@ -172,27 +149,19 @@ def file_info():
     folder_count = 0
 
     for dirpath, dirnames, filenames in os.walk(base_directory):
-        # print(dirpath)
         for file in filenames:
             file_path = os.path.join(dirpath, file)
             total_size += os.path.getsize(file_path)
         
         folder_list.append(str(dirnames))
 
-        # print(total_size)
         memory_list.append(str(total_size)) #important this occurs after for loop for last folder to get apended
         total_size -= total_size # clear out value after apendng to list
 
         folder_directory_list.append(str(dirpath))
-
-        # if len(dirnames) > 0:
-        #     print("one")
-        
-        #print(len(dirnames))
         
         folder_count += 1
     
-
     # stored memory values of folders in 
     del memory_list[0] # delete first index in folder memory list
 
@@ -203,8 +172,8 @@ def file_info():
 
     '''
     functionality splits here -- implementing folder names and sizes
-
     '''
+    
     for i in range(folder_count-1):
 
         # loops through folder count range(some number) to control index position for memory list
@@ -217,24 +186,19 @@ def file_info():
 
         memory_list_int = int(memory_list[i])
 
-        if folder_size_len <= 3:
-            #print("leave as bytes")
+        if folder_size_len <= 3: # base bytes
             is_bytes = True
-        elif folder_size_len >= 4 and folder_size_len < 7: # greater than thousand less than a million
-            #print("convert to kb")
+        elif folder_size_len >= 4 and folder_size_len < 7: # (bytes to kb)
             memory_list_int = int(memory_list_int/1024)
             is_kb = True
-        elif folder_size_len >= 7 and folder_size_len < 10: # greater than million less than bilion
-            #print("convert to mb")
+        elif folder_size_len >= 7 and folder_size_len < 10: # (kb to mb)
             memory_list_int = int((memory_list_int/1024)/1024)
             is_mb = True
-        elif folder_size_len >= 10 and folder_size_len < 13: # greater than a billion less than a trillion
-            #print("convert to gb")
+        elif folder_size_len >= 10 and folder_size_len < 13: # (mb to gb)
             memory_list_int = round(((memory_list_int/1024)/1024)/1024, 2)
             is_gb = True
         else:
             print("undefined size")
-
 
         if os.path.isdir(folder_directory_list[i]) and is_bytes:
             print("The size of folder " + str(evaluated_folder_list[i]) + " is " + str(memory_list_int) +" bytes")
@@ -247,15 +211,11 @@ def file_info():
 
         if os.path.isdir(folder_directory_list[i]) and is_gb:
             print("The size of folder " + str(evaluated_folder_list[i]) + " is " + str(memory_list_int) +" GB")
-
-    
+   
     return 0
-
 
 # File delete function
 def file_delete():
-    
-    file_number = 0
     
     #get file extension from user
     file_ext = file_ext_var.get()
@@ -283,7 +243,7 @@ def file_delete():
             base_file_list.append(base_files)
             base_extension_list.append(base_extension) #this goes unused
 
-    #for each basic file in the list, if theres duplicates '(count > 1)', 
+    #for each basic file in the list, if theres duplicates"(count() > 1)" 
     # then append those to the list of files to delete
     for file in base_file_list:
         if base_file_list.count(file) > 1:
@@ -307,28 +267,13 @@ def file_delete():
     for final_file in final_deleted_files:
         #WARNING: removes the files
         os.remove(final_file)
-        
-    # if file.endswith(file_ext):
-    #     break
 
     return deleted_file_list
 
-
 def file_select():
-
     # Option for just selected files 
     selected_files = filedialog.askopenfilenames()
     print("selected files = "+ str(selected_files))
-
-    # output_window = tk.Toplevel(root)
-    # output_window.title("Output")
-
-    # output_label = tk.Label(output_window, text=file_info())
-    # output_label.pack()
-
-# Simple setup for outputing in tkinter
-# output_button = tk.Button(root, text="Display output", command=file_select)
-# output_button.pack()
 
 # Rename button
 button = Button(root, text="Rename", command=file_rename)
@@ -338,17 +283,36 @@ button.pack()
 button = Button(root, text="Show Directory Info", command=file_info)
 button.pack()
 
-# Select file button
-# button = Button(root, text="Select Files", command=file_select)
-# button.pack()
-
 # delete file button
 button = Button(root, text="Delete Files", command=file_delete)
 button.pack()
 
+
 root.mainloop()
 
+
 '''
-Note: Can add functionality to list all names of files and choose what to do with that ability
+Notes: 
+Can add functionality to list all names of files and choose what to do with that ability
+
+Extra code:
+
+# Simple setup for outputing in tkinter
+# output_button = tk.Button(root, text="Display output", command=file_select)
+# output_button.pack()
+
+# Select file button
+# button = Button(root, text="Select Files", command=file_select)
+# button.pack()
+
+    # output_window = tk.Toplevel(root)
+    # output_window.title("Output")
+
+    # output_label = tk.Label(output_window, text=file_info())
+    # output_label.pack()
+
+# This will print each file in the directory and in what order it is in.
+#print("file number "+str(file_number)+":")
+#print(str(file)+" ")
 
 '''
