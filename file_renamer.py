@@ -4,6 +4,7 @@ from tkinter import filedialog
 # from tkinter import StringVar
 from tkinter import *
 from tkinter import messagebox
+# from send2trash import send2trash // no module found issue
 
 
 # Root variables
@@ -88,7 +89,6 @@ def file_rename():
             #print(old_file_path)
             #print(new_file_path)
 
-            
             #WARNING: renames the files
             os.rename(old_file_path, new_file_path)
             
@@ -252,6 +252,68 @@ def file_info():
     return 0
 
 
+# File delete function
+def file_delete():
+    
+    file_number = 0
+    
+    #get file extension from user
+    file_ext = file_ext_var.get()
+    #get directory +//
+    directory = selected_dir.get() + "//"
+    
+    #file name list
+    deleted_file_list = []
+
+    # basic files list
+    base_file_list = []
+    base_extension_list = []
+    
+    if file_ext_var.get() == "" or selected_dir.get() == "":
+        error_message()
+        raise ValueError("Missing directory or file extension")
+        
+    else:
+        # for loop to cycle files and separate/append data to lists
+        for file in os.listdir(directory):
+
+            # Split each file and extension
+            base_files, base_extension = os.path.splitext(file)
+
+            base_file_list.append(base_files)
+            base_extension_list.append(base_extension) #this goes unused
+
+    #for each basic file in the list, if theres duplicates '(count > 1)', 
+    # then append those to the list of files to delete
+    for file in base_file_list:
+        if base_file_list.count(file) > 1:
+            deleted_file_list.append(file)
+
+    # delete every second element (counting from the first)
+    del deleted_file_list[::2]
+
+    final_deleted_files = [] #set list for our final form files to delete
+    # Now we need to re-add the directory path, and the type of extension we want to delete
+    for each_file in deleted_file_list:
+        dir_each_file = directory + each_file + file_ext #note that this adds the users select ext to to listed is --
+        final_deleted_files.append(dir_each_file) #thus hardcoding it to an extent
+
+    # In this code str() is used to convert each element to string, and
+    #  join() concatenates these strings together with a comma between each element
+    deleted_files_str = ', '.join(str(x) for x in final_deleted_files)
+    print("Deleted files = " + deleted_files_str)
+
+    # The final remove loop.
+    for final_file in final_deleted_files:
+        #WARNING: removes the files
+        os.remove(final_file)
+        
+    # if file.endswith(file_ext):
+    #     break
+
+    return deleted_file_list
+
+
 def file_select():
 
     # Option for just selected files 
@@ -277,9 +339,12 @@ button = Button(root, text="Show Directory Info", command=file_info)
 button.pack()
 
 # Select file button
-button = Button(root, text="Select Files", command=file_select)
-button.pack()
+# button = Button(root, text="Select Files", command=file_select)
+# button.pack()
 
+# delete file button
+button = Button(root, text="Delete Files", command=file_delete)
+button.pack()
 
 root.mainloop()
 
