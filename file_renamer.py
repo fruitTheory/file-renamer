@@ -62,13 +62,10 @@ def file_rename():
     
         for file in os.listdir(directory):
             
-            file_number +=1
-
-            old_file_path = os.path.join(directory+file)
-            
-            filepath_replace = old_file_path.replace(file, file_new_name) 
-            
-            new_file_path = filepath_replace+str(file_number)+file_type
+            file_number +=1 #increment per file
+            old_file_path = os.path.join(directory+file) #get current path
+            filepath_replace = old_file_path.replace(file, file_new_name) #replace w/ new           
+            new_file_path = filepath_replace+str(file_number)+file_type #store path
 
             # Appends new names to empty list
             new_name_list.append(new_file_path)
@@ -231,8 +228,7 @@ def file_delete():
     
     if file_ext_var.get() == "" or selected_dir.get() == "":
         error_message()
-        raise ValueError("Missing directory or file extension")
-        
+        raise ValueError("Missing directory or file extension")    
     else:
         # for loop to cycle files and separate/append data to lists
         for file in os.listdir(directory):
