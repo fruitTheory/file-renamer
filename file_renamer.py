@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import *
 from tkinter import messagebox
-# from send2trash import send2trash // no module found issue
+from send2trash import send2trash
 
 
 # Root variables
@@ -48,14 +48,14 @@ def file_rename():
     file_number = 0
     file_new_name = file_name_var.get()
     file_type = file_ext_var.get()
-    directory = selected_dir.get() + "//"    
+    directory = selected_dir.get() + "//" 
     new_name_list = []
     
     # To-do: if file name is changed while program is running can get confused whether the file is there or not
     if file_name_var.get() == "" or file_ext_var.get() == "" or selected_dir.get() == "":
         error_message()
         raise ValueError("Missing text fields")
-        
+     
     else:
     
         for file in os.listdir(directory):
@@ -168,7 +168,7 @@ def file_info():
     '''
     functionality splits here -- implementing folder names and sizes
     '''
-    
+
     for i in range(folder_count-1):
 
         # loops through folder count range(some number) to control index position for memory list
@@ -226,7 +226,7 @@ def file_delete():
     
     if file_ext_var.get() == "" or selected_dir.get() == "":
         error_message()
-        raise ValueError("Missing directory or file extension")    
+        raise ValueError("Missing directory or file extension")       
     else:
         # for loop to cycle files and separate/append data to lists
         for file in os.listdir(directory):
@@ -288,6 +288,11 @@ root.mainloop()
 '''
 Notes: 
 Can add functionality to list all names of files and choose what to do with that ability
+
+Add option if extension already .jpg or .png then keep maybe as popup("keep extension?")
+Implement selected files option or option to not rename folders if theyre in a directory
+Work on UI change to QT
+Imlement image sharpener from other script
 
 Extra code:
 
