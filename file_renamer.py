@@ -284,31 +284,9 @@ button.pack()
 
 root.mainloop()
 
-
 '''
-Notes: 
-Can add functionality to list all names of files and choose what to do with that ability
-
-Add option if extension already .jpg or .png then keep maybe as popup("keep extension?")
-Implement selected files option or option to not rename folders if theyre in a directory
-Work on UI change to QT
-Imlement image sharpener from other script
 
 Extra code:
-
-# Simple setup for outputing in tkinter
-# output_button = tk.Button(root, text="Display output", command=file_select)
-# output_button.pack()
-
-# Select file button
-# button = Button(root, text="Select Files", command=file_select)
-# button.pack()
-
-    # output_window = tk.Toplevel(root)
-    # output_window.title("Output")
-
-    # output_label = tk.Label(output_window, text=file_info())
-    # output_label.pack()
 
 # This will print each file in the directory and in what order it is in.
 #print("file number "+str(file_number)+":")
