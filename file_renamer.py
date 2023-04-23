@@ -17,14 +17,22 @@ root.iconbitmap("icon.ico")
 # Starts the window in light mode
 style = Style(theme="cosmo")
 
-
 # Create 2 StringVar objects
 file_name_var = tk.StringVar()
 file_ext_var = tk.StringVar()
 
-
 theme_image_light = tk.PhotoImage(file="light.png").subsample(2, 2)
 theme_image_dark = tk.PhotoImage(file="dark.png").subsample(2, 2)
+import functionality
+import os
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import messagebox
+from send2trash import send2trash
+import ttkbootstrap as ttk
+from ttkbootstrap import Style
+from ttkbootstrap.widgets import Button, Entry
+import subprocess
 
 # Function to change the theme and button image
 def change_theme():
@@ -35,7 +43,7 @@ def change_theme():
         style.theme_use("cosmo")
         dark_mode_button.config(image=theme_image_dark)
 
-
+# Create a button to change the theme
 dark_mode_button = ttk.Button(root, image=theme_image_dark, command=change_theme)
 dark_mode_button.place(relx=1, x=-10, y=10, anchor='ne')
 
@@ -57,7 +65,6 @@ entry_name.pack()
 label_file_ext.pack()
 entry_ext.pack()
 label_select_dir.pack()
-
 
 # Insert pre-text
 entry_name.insert(0, "filename")
@@ -136,17 +143,8 @@ def file_rename():
         table_confirm.column(1, width=200)
         table_confirm.column(2, width=200)
 
-        #* Old code to insert the old and new names into the table, this was replace by the code below it, because it provides a way for the user to edit the names
-        # for i in range(len(new_name_list)):
-        #     table_confirm.insert("", "end", values=(str(old_name_list[i]).split("//")[1], str(new_name_list[i]).split("//")[1]), open=True)
-        # table_confirm.pack(pady=10)
-        # confirm_window.mainloop()
-        
-        
 
-        #* New code mentioned above
         #Code to edit the table, so that the user can change the names of the files
-
         # Loop through the lists and insert the old and new names into the table
         for i in range(len(new_name_list)):
             # Insert the old and new names into the table, the whole path is split and only the file name is inserted
@@ -222,61 +220,16 @@ def file_rename():
                 table_confirm.delete(item) 
 
 
-                
-
-
         # Button to delete the selected rows
         delete_button = Button(confirm_window, text="Remove selected rows from renaming", command=delete_selected_rows)
         delete_button.pack(pady=10)
         confirm_window.mainloop()
 
-#! Old function, not in use anymore
-# File rename function
-# def file_rename():
-#     file_number = 0
-#     file_new_name = file_name_var.get()
-#     file_type = file_ext_var.get()
-#     directory = selected_dir.get() + "//" 
-#     new_name_list = []
-    
-#     # To-do: if file name is changed while program is running can get confused whether the file is there or not
-#     if file_name_var.get() == "" or file_ext_var.get() == "" or selected_dir.get() == "":
-#         error_message()
-#         raise ValueError("Missing text fields")
-    
-#     else:
-#         confirm = messagebox.askquestion("Confirm", "Are you sure you want to rename these files?\nThis will rename ALL files in the selected directory", parent=root)
-#         if confirm == "yes":
-    
-#             for file in os.listdir(directory):
-                
-#                 file_number +=1 #increment per file
-#                 old_file_path = os.path.join(directory+file) #get current path
-#                 filepath_replace = old_file_path.replace(file, file_new_name) #replace w/ new           
-#                 new_file_path = filepath_replace+str(file_number)+file_type #store path
-
-#                 # Appends new names to empty list
-#                 new_name_list.append(new_file_path)
-            
-#                 #WARNING: renames the files
-#                 os.rename(old_file_path, new_file_path)
-#             file_info()
-#             return new_name_list
-#         else:
-#             pass
-
-
 #? what is this for?
 print("Active")
 
 
-
 def file_info():
-
-    #! horrible way of doing this, redo later, probably using something to monitor the directory for changes
-    #* This line of code will call the function again after 2 seconds, so that the table will update every 2 seconds
-    # root.after(2000, file_info)
-
     #* Table needs to be global, so that when the function is called again, it can destroy the old table and create a new one
     global table
     # Try to destroy table if it exists, so that a new one can be created
@@ -285,29 +238,50 @@ def file_info():
     except:
         pass
 
-    # Below gets selected direction and stores files in that directory into a list
+    # Get the directory from the entry widget
     directory = selected_dir.get() + "//"
-    base_directory = selected_dir.get()
 
-    # Storage for files information
-    file_list = []
-    file_names = []
-    file_count = 0
+    #* This function is working, but i've not yet tested it with a large number of files, there might be some issues
+    # Get the list of files and folders in the directory, this function is used to include files and subfolders in the table
+    def get_children(base_directory):
+        # Create an empty list to store the files
+        children_files = []
 
-    for file in os.listdir(directory):
-        # Take current filename and append to file name list
-        file_names.append(file)
+        # Loop through all the files in the directory
+        for files in os.listdir(base_directory):
+            # Get the full path of the file
+            full_path = os.path.join(base_directory, files)
+            # Check if the file is a folder
+            if os.path.isdir(full_path):
+                # Add the folder itself to the list
+                children_files.append(full_path)
+                # Get the files inside the folder
+                for dirpath, dirnames, filenames in os.walk(full_path):
+                    # Loop through all the files inside the folder
+                    for file in filenames:
+                        # Get the full path of the file
+                        file_name = os.path.join(dirpath, file)
+                        # Add the file to the list
+                        children_files.append(file_name)
 
-        # Just take current file path and append to file list
-        current_file_path = os.path.join(directory+file)
-        file_list.append(current_file_path)
+            # If the file is not a folder, just add it to the list
+            else:
+                children_files.append(full_path)
 
+        # Return the list of files
+        return children_files
     
-    # Get number of files in directory
-    table_height = len(file_list)
-
+    # Function to get the size of a folder, this is used to include the size of all the files inside the folder in the table
+    def get_folder_size(folder_path):
+        total_size = 0
+        for dirpath, dirnames, filenames in os.walk(folder_path):
+            for file in filenames:
+                file_path = os.path.join(dirpath, file)
+                total_size += os.path.getsize(file_path)
+        return total_size
+    
     # Create a table to display file information
-    table = ttk.Treeview(root, columns=(1,2,3), show="headings", height=table_height)
+    table = ttk.Treeview(root, columns=(1,2,3), show="headings", height=20)
     table.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
     table.column(1, width=200)
     table.column(2, width=100)
@@ -315,131 +289,38 @@ def file_info():
     table.heading(1, text="File Name", anchor=tk.W, command=lambda: functionality.sort_treeview(table, 1, False, False))
     table.heading(2, text="File Type", anchor=tk.W, command=lambda: functionality.sort_treeview(table, 2, False, False))
     table.heading(3, text="File Size", anchor=tk.W, command=lambda: functionality.sort_treeview(table, 3, False, True))
-
     
-    # Below loops through list of files and prints whether file or folder and size
-    for file in file_list:
-        
-        # store size in bytes and convert to kb, if greater than 999 convert to MB and again to GB
-        file_size = os.path.getsize(file)
 
-        is_bytes = False
-        is_kb = False
-        is_mb = False
-        is_gb = False
-
-        # Find size in bytes and convert to kb, mb, gb, etc based on number of digits(bytes)
-        size_length = len(str(file_size)) # get number of digits in sequence
-
-        if size_length <= 3:
-            is_bytes = True
-        elif size_length >= 4 and size_length < 7: # greater than thousand less than a million
-            file_size = int(file_size/1024)
-            is_kb = True
-        elif size_length >= 7 and size_length < 10: # greater than million less than bilion
-            file_size = int((file_size/1024)/1024)
-            is_mb = True
-        elif size_length >= 10 and size_length < 13: # greater than a billion less than a trillion
-            file_size = round(((file_size/1024)/1024)/1024, 2)
-            is_gb = True
+    #* This code includes the files and folders in the table, using the get_children function
+    for file in get_children(directory):
+        if os.path.isfile(file):
+            file_size = os.path.getsize(file)
+            file_type = "File"
         else:
-            print("undefined size")
-        table_file_size = ""
-        if os.path.isfile(file) and is_bytes:
-            # print("The size of file " + file_names[file_count] + " is " + str(file_size) +" bytes")
-            table_file_size = str(file_size) + " bytes"
-        if os.path.isfile(file) and is_kb:
-            # print("The size of file " + file_names[file_count] + " is " + str(file_size) +" KB")
-            table_file_size = str(file_size) + " KB"
-        if os.path.isfile(file) and is_mb:
-            # print("The size of file " + file_names[file_count] + " is " + str(file_size) +" MB")
-            table_file_size = str(file_size) + " MB"
-        if os.path.isfile(file) and is_gb:
-            # print("The size of file " + file_names[file_count] + " is " + str(file_size) +" GB")
-            table_file_size = str(file_size) + " GB"
+            file_size = get_folder_size(file)
+            file_type = "Folder"
         
-        table.insert("", "end", values=(file_names[file_count], "File", table_file_size), open=True)
-        
+        size_suffix = ["bytes", "KB", "MB", "GB", "TB"]
+        size_index = 0
 
+        # Loop to convert file size to a human-readable format
+        while file_size >= 1024 and size_index < len(size_suffix) - 1:
+            # Divide file size by 1024 to convert units
+            file_size /= 1024
+            # Increment size_index to track the current unit
+            size_index += 1 
 
-        file_count += 1
+        # Round file size to 2 decimal places for display purposes
+        file_size = round(file_size, 2)
 
-    '''
-    functionality splits here -- gathering folder names and sizes
-    '''
-    #? While testing other functions, I see some errors probably caused by this, any idea why?
+        # Create a string to display the file size and unit in the table
+        table_file_size = f"{file_size} {size_suffix[size_index]}"
 
-    total_size = 0
-    memory_list = []
-    folder_list = []
-    folder_directory_list = []
-    folder_count = 0
+        # Get the relative path to display as "folder/file"
+        relative_path = os.path.relpath(file, directory)
 
-    for dirpath, dirnames, filenames in os.walk(base_directory):
-        for file in filenames:
-            file_path = os.path.join(dirpath, file)
-            total_size += os.path.getsize(file_path)
-        
-        folder_list.append(str(dirnames))
-
-        memory_list.append(str(total_size)) #important this occurs after for loop for last folder to get apended
-        total_size -= total_size # clear out value after apendng to list
-
-        folder_directory_list.append(str(dirpath))
-        
-        folder_count += 1
-    
-    # stored memory values of folders in 
-    del memory_list[0] # delete first index in folder memory list
-
-    folder_list_0 = folder_list.pop(0) # first index of fodler list
-    evaluated_folder_list = eval(folder_list_0) # apparently popped input was reading as a string not a list, so used eval()
-
-    del folder_directory_list[0] # delete first index in directory list
-
-    '''
-    functionality splits here -- implementing folder names and sizes
-    '''
-
-    for i in range(folder_count-1):
-
-        # loops through folder count range(some number) to control index position for memory list
-        folder_size_len = len(str(memory_list[i]))
-
-        is_bytes = False
-        is_kb = False
-        is_mb = False
-        is_gb = False
-
-        memory_list_int = int(memory_list[i])
-
-        if folder_size_len <= 3: # base bytes
-            is_bytes = True
-        elif folder_size_len >= 4 and folder_size_len < 7: # (bytes to kb)
-            memory_list_int = int(memory_list_int/1024)
-            is_kb = True
-        elif folder_size_len >= 7 and folder_size_len < 10: # (kb to mb)
-            memory_list_int = int((memory_list_int/1024)/1024)
-            is_mb = True
-        elif folder_size_len >= 10 and folder_size_len < 13: # (mb to gb)
-            memory_list_int = round(((memory_list_int/1024)/1024)/1024, 2)
-            is_gb = True
-        else:
-            print("undefined size")
-
-        if os.path.isdir(folder_directory_list[i]) and is_bytes:
-            print("The size of folder " + str(evaluated_folder_list[i]) + " is " + str(memory_list_int) +" bytes")
-
-        if os.path.isdir(folder_directory_list[i]) and is_kb:
-            print("The size of folder " + str(evaluated_folder_list[i]) + " is " + str(memory_list_int) +" KB")
-
-        if os.path.isdir(folder_directory_list[i]) and is_mb:
-            print("The size of folder " + str(evaluated_folder_list[i]) + " is " + str(memory_list_int) +" MB")
-
-        if os.path.isdir(folder_directory_list[i]) and is_gb:
-            print("The size of folder " + str(evaluated_folder_list[i]) + " is " + str(memory_list_int) +" GB")
-   
-    return 0
+        # Insert the file information into the table
+        table.insert("", "end", values=(relative_path, file_type, table_file_size), open=True)
 
 # File delete function
 def file_delete():
@@ -506,7 +387,7 @@ def file_select():
 button = Button(button_row, text="Rename", command=file_rename)
 button.pack(side=tk.LEFT, padx=5, pady=5, fill=tk.BOTH, expand=True)
 
-#* This button is not really needed, the only reason it has to exist is to refresh the file list if needed
+#* This button is not really needed anymore, the only reason it has to exist is to refresh the file list if needed
 # Show directory info
 # button = Button(button_row, text="Show Directory Info", command=file_info)
 # button.pack(side=tk.LEFT, padx=5, pady=5)
