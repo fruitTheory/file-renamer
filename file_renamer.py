@@ -139,11 +139,9 @@ def file_rename():
         def rename_files():
             # First rename the files
             for i in range(len(new_name_list)):
-                print(old_name_list[i], new_name_list[i])
                 os.rename(old_name_list[i], new_name_list[i])
             # Then rename the folders
             for i in range(len(new_name_list_folders)):
-                print(old_name_list_folders[i], new_name_list_folders[i])
                 os.rename(old_name_list_folders[i], new_name_list_folders[i])
             confirm_window.destroy()
             # This function will update the main table with the new names
