@@ -23,16 +23,6 @@ file_ext_var = tk.StringVar()
 
 theme_image_light = tk.PhotoImage(file="light.png").subsample(2, 2)
 theme_image_dark = tk.PhotoImage(file="dark.png").subsample(2, 2)
-import functionality
-import os
-import tkinter as tk
-from tkinter import filedialog
-from tkinter import messagebox
-from send2trash import send2trash
-import ttkbootstrap as ttk
-from ttkbootstrap import Style
-from ttkbootstrap.widgets import Button, Entry
-import subprocess
 
 # Function to change the theme and button image
 def change_theme():
@@ -81,6 +71,36 @@ dir_text.pack(pady=10)
 button_row = tk.Frame(root)
 button_row.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
 
+#* This function is working, but i've not yet tested it with a large number of files, there might be some issues
+# Get the list of files and folders in the directory, this function is used to include files and subfolders in the table
+def get_children(base_directory):
+    # Create an empty list to store the files
+    children_files = []
+
+    # Loop through all the files in the directory
+    for files in os.listdir(base_directory):
+        # Get the full path of the file
+        full_path = os.path.join(base_directory, files)
+        # Check if the file is a folder
+        if os.path.isdir(full_path):
+            # Add the folder itself to the list
+            children_files.append(full_path)
+            # Get the files inside the folder
+            for dirpath, dirnames, filenames in os.walk(full_path):
+                # Loop through all the files inside the folder
+                for file in filenames:
+                    # Get the full path of the file
+                    file_name = os.path.join(dirpath, file).replace("\\" , "/") #* This replace is needed, because the path is returned with backslashes, and we need forward slashes for to find the file in explorer
+                    # Add the file to the list
+                    children_files.append(file_name)
+
+        # If the file is not a folder, just add it to the list
+        else:
+            children_files.append(full_path)
+
+    # Return the list of files
+    return children_files
+
 #* This function will open a directory selector and store the selected directory in the selected_dir variable, and then create a table with the files in the directory
 def select_dir():
     selected_dir.set(filedialog.askdirectory())
@@ -94,29 +114,19 @@ def error_message():
     result = messagebox.showinfo("Error", "Please fill in all 3 fields", parent=root)
 
 def file_rename():
-        file_number = 0
+        file_number = 1
         file_new_name = file_name_var.get()
         file_type = file_ext_var.get()
         directory = selected_dir.get() + "//" 
         new_name_list = []
         old_name_list = []
+        old_name_list_folders = []
+        new_name_list_folders = []
 
         if file_name_var.get() == "" or file_ext_var.get() == "" or selected_dir.get() == "":
             error_message()
             raise ValueError("Missing text fields")
-            
-        for file in os.listdir(directory):
-                
-            file_number +=1 #increment per file
-            old_file_path = os.path.join(directory+file) #get current path
-            filepath_replace = old_file_path.replace(file, file_new_name) #replace w/ new           
-            new_file_path = filepath_replace+str(file_number)+file_type #store path
 
-            # Appends new names to empty list
-            new_name_list.append(new_file_path)
-            # Appends old names to empty list
-            old_name_list.append(old_file_path)
-        
         # Create a new window to confirm the changes
         confirm_window = tk.Toplevel(root)
         confirm_window.title("Confirm")
@@ -127,74 +137,159 @@ def file_rename():
 
         # Function to rename the files
         def rename_files():
+            # First rename the files
             for i in range(len(new_name_list)):
+                print(old_name_list[i], new_name_list[i])
                 os.rename(old_name_list[i], new_name_list[i])
+            # Then rename the folders
+            for i in range(len(new_name_list_folders)):
+                print(old_name_list_folders[i], new_name_list_folders[i])
+                os.rename(old_name_list_folders[i], new_name_list_folders[i])
             confirm_window.destroy()
+            # This function will update the main table with the new names
             file_info()
 
             #? Maybe add some code to really confirm the changes were successful? for now it just shows a message box without checking, cause im lazy :)
             messagebox.showinfo("Success", "Files renamed successfully", parent=root)
         confirm_button = Button(confirm_window, text="Confirm", command=rename_files)
-
         confirm_button.pack(pady=10)
+
+        # Create a table to show the changes that will be made
         table_confirm = ttk.Treeview(confirm_window, columns=(1,2), show="headings", height="18")
         table_confirm.heading(1, text="Old Name", anchor=tk.W)
         table_confirm.heading(2, text="New Name", anchor=tk.W)
         table_confirm.column(1, width=200)
         table_confirm.column(2, width=200)
-
-
-        #Code to edit the table, so that the user can change the names of the files
-        # Loop through the lists and insert the old and new names into the table
-        for i in range(len(new_name_list)):
-            # Insert the old and new names into the table, the whole path is split and only the file name is inserted
-            table_confirm.insert("", "end", values=(str(old_name_list[i]).split("//")[1], str(new_name_list[i]).split("//")[1]), open=True)
-            
-
         
-            # Function to edit the table
-            def on_cell_double_click(event):
-                # Get the row and column of the cell that was double clicked
-                row_id = table_confirm.identify_row(event.y)
-                column = table_confirm.identify_column(event.x)
+        for file in get_children(directory):
+            #* If it is a file
+            if os.path.isfile(file):
+                # Get the name of the file without the whole path, only subfolders and the file name, like: "folder1/filename.png"
+                file_path = str(file).split("//")[1].split("/")[:-1]
+                # If the file is in a subfolder, add the subfolder name to the path
+                if len(file_path) > 0:
+                    file_path = "/".join(file_path) + "/"
+                # If the file is not in a subfolder, set the path to an empty string
+                else:
+                    file_path = ""
 
-                if row_id:
-                    # Get the index of the column
-                    column_index = int(column[1:]) - 1
-                    # Get the old value of the cell
-                    old_value = table_confirm.item(row_id, "values")[column_index]
-                    # Add the directory to the old value
-                    old_value = directory + old_value
-                    # Create an entry widget to replace the cell
-                    entry = ttk.Entry(table_confirm, textvariable=tk.StringVar())
-                    entry.place(x=event.x, y=event.y, anchor="w")
+                # Get the old name of the file, without the whole path
+                old_file_str_table = str(file).split("//")[1]
+                # Create the new name of the file
+                new_file_str_table = file_path + str(file_new_name)+str(file_number)+str(file_type)
+                # Add the files to the table
+                table_confirm.insert("", "end", values=(old_file_str_table, new_file_str_table))
+                # Add the files to the list of files to rename
+                old_name_list.append(str(file))
+                new_name_list.append(directory + new_file_str_table)
+                file_number +=1
 
-                    # Function to update the table and the lists with the new value, when the user presses enter
-                    def on_entry_confirm(_):
-                        # Get the new value of the cell
-                        new_value = entry.get()
-                        # Update the table with the new value
-                        table_confirm.set(row_id, column, new_value)
-                        # Check which column was edited and update the lists with the new value
-                        if column == "#1":
-                            # Get the index of the old value in the "old_name_list" list
-                            old_name_index:int = old_name_list.index(old_value)
-                            # Update the list with the new value
-                            old_name_list[old_name_index]:list = new_value
-                        # Check which column was edited and update the lists with the new value
-                        elif column == "#2":
-                            # Get the index of the old value in the "new_name_list" list
-                            new_name_index:int = new_name_list.index(old_value)
-                            # Update the list with the new value
-                            new_name_list[new_name_index]:list = directory + new_value
-                        # Destroy the entry widget
-                        entry.destroy()
-                    # Bind the function to the entry widget, so that when the user presses enter, the function above is called
-                    entry.bind("<Return>", on_entry_confirm)
-                    entry.focus()
+                # Function to edit the table
+                def on_cell_double_click(event):
+                    # Get the row and column of the cell that was double clicked
+                    row_id = table_confirm.identify_row(event.y)
+                    column = table_confirm.identify_column(event.x)
 
+                    if row_id:
+                        # Get the index of the column
+                        column_index = int(column[1:]) - 1
+                        # Get the old value of the cell
+                        old_value = table_confirm.item(row_id, "values")[column_index]
+                        # Add the directory to the old value
+                        old_value = directory + old_value
+                        # Create an entry widget to replace the cell
+                        entry = ttk.Entry(table_confirm, textvariable=tk.StringVar())
+                        entry.place(x=event.x, y=event.y, anchor="w")
 
-        table_confirm.pack(pady=10)
+                        # Function to update the table and the lists with the new value, when the user presses enter
+                        def on_entry_confirm(_):
+                            # Get the new value of the cell
+                            new_value = entry.get()
+                            # Update the table with the new value
+                            table_confirm.set(row_id, column, new_value)
+                            # Check which column was edited and update the lists with the new value
+                            if column == "#1":
+                                # Get the index of the old value in the "old_name_list" list
+                                old_name_index:int = old_name_list.index(old_value)
+                                # Update the list with the new value
+                                old_name_list[old_name_index]:list = new_value
+                            # Check which column was edited and update the lists with the new value
+                            elif column == "#2":
+                                # Get the index of the old value in the "new_name_list" list
+                                new_name_index:int = new_name_list.index(old_value)
+                                # Update the list with the new value
+                                new_name_list[new_name_index]:list = directory + new_value
+                            # Destroy the entry widget
+                            entry.destroy()
+                        # Bind the function to the entry widget, so that when the user presses enter, the function above is called
+                        entry.bind("<Return>", on_entry_confirm)
+                        entry.focus()
+
+            #* If it is a folder
+            else:
+                # Get the name of the folder without the whole path, only subfolders, like: "folder1/folder2"
+                file_path = str(file).split("//")[1].split("/")[:-1]
+                # if the folder is in a subfolder, add the subfolder name to the path
+                if len(file_path) > 0:
+                    file_path = "/".join(file_path) + "/"
+                # If the file is not in a subfolder, set the path to an empty string
+                else:
+                    file_path = ""
+
+                # Get the old name of the file, without the whole path
+                old_file_str_table = str(file).split("//")[1]
+                # Create the new name of the file
+                new_file_str_table = file_path + str(file_new_name)+str(file_number)
+                # Add the files to the table
+                table_confirm.insert("", "end", values=(old_file_str_table, new_file_str_table))
+                # Add the files to the list of files to rename
+                old_name_list_folders.append(str(file))
+                new_name_list_folders.append(directory + new_file_str_table)
+                file_number +=1
+
+                # Function to edit the table
+                def on_cell_double_click(event):
+                    # Get the row and column of the cell that was double clicked
+                    row_id = table_confirm.identify_row(event.y)
+                    column = table_confirm.identify_column(event.x)
+
+                    if row_id:
+                        # Get the index of the column
+                        column_index = int(column[1:]) - 1
+                        # Get the old value of the cell
+                        old_value = table_confirm.item(row_id, "values")[column_index]
+                        # Add the directory to the old value
+                        old_value = directory + old_value
+                        # Create an entry widget to replace the cell
+                        entry = ttk.Entry(table_confirm, textvariable=tk.StringVar())
+                        entry.place(x=event.x, y=event.y, anchor="w")
+
+                        # Function to update the table and the lists with the new value, when the user presses enter
+                        def on_entry_confirm(_):
+                            # Get the new value of the cell
+                            new_value = entry.get()
+                            # Update the table with the new value
+                            table_confirm.set(row_id, column, new_value)
+                            # Check which column was edited and update the lists with the new value
+                            if column == "#1":
+                                # Get the index of the old value in the "old_name_list" list
+                                old_name_index:int = old_name_list_folders.index(old_value)
+                                # Update the list with the new value
+                                old_name_list_folders[old_name_index]:list = new_value
+                            # Check which column was edited and update the lists with the new value
+                            elif column == "#2":
+                                # Get the index of the old value in the "new_name_list" list
+                                new_name_index:int = new_name_list_folders.index(old_value)
+                                # Update the list with the new value
+                                new_name_list_folders[new_name_index]:list = directory + new_value
+                            # Destroy the entry widget
+                            entry.destroy()
+                        # Bind the function to the entry widget, so that when the user presses enter, the function above is called
+                        entry.bind("<Return>", on_entry_confirm)
+                        entry.focus()
+            
+           
+        table_confirm.pack(pady=10, padx=10, fill="both", expand=True)
         # Bind the function to the table, so that when the user double clicks a cell, it becomes editable
         table_confirm.bind("<Double-1>", on_cell_double_click)
         # Function to delete the selected rows
@@ -206,15 +301,35 @@ def file_rename():
                 row_values = table_confirm.item(item)['values'] 
                 for i in range(len(row_values)):
                     # Add the directory to the value
-                    row_values[i] = directory + row_values[i]
-                # Get the index of the old name in the "old_name_list" list
-                old_name_index = old_name_list.index(str(row_values[0]))
-                # Get the index of the new name in the "new_name_list" list
-                new_name_index = new_name_list.index(str(row_values[1]))
-                # Delete the old name from the "old_name_list" list
-                del old_name_list[old_name_index]
-                # Delete the new name from the "new_name_list" list
-                del new_name_list[new_name_index]
+                    row_values[i] = directory + str(row_values[i])
+                
+                # Try to delete the row from the lists
+                try:
+                    # Get the index of the old name in the "old_name_list" list
+                    old_name_index = old_name_list_folders.index(str(row_values[0]))
+                    # Get the index of the new name in the "new_name_list" list
+                    new_name_index = new_name_list_folders.index(str(row_values[1]))
+                    # Delete the old name from the "old_name_list" list
+                    del old_name_list_folders[old_name_index]
+                    # Delete the new name from the "new_name_list" list
+                    del new_name_list_folders[new_name_index]
+                # If it fails, it means that the row is a file, so it can't be deleted from the lists above
+                except:
+                    # Not a folder
+                    pass
+                # Delete the selected rows from the lists
+                try:
+                    old_name_index = old_name_list.index(str(row_values[0]))
+                    # Get the index of the new name in the "new_name_list" list
+                    new_name_index = new_name_list.index(str(row_values[1]))
+                    # Delete the old name from the "old_name_list" list
+                    del old_name_list[old_name_index]
+                    # Delete the new name from the "new_name_list" list
+                    del new_name_list[new_name_index]
+                # If it fails, it means that the row is a folder, so it can't be deleted from the lists above
+                except:
+                    # Not a file
+                    pass
 
                 # Delete the selected rows from the table
                 table_confirm.delete(item) 
@@ -241,36 +356,7 @@ def file_info():
     # Get the directory from the entry widget
     directory = selected_dir.get() + "//"
 
-    #* This function is working, but i've not yet tested it with a large number of files, there might be some issues
-    # Get the list of files and folders in the directory, this function is used to include files and subfolders in the table
-    def get_children(base_directory):
-        # Create an empty list to store the files
-        children_files = []
 
-        # Loop through all the files in the directory
-        for files in os.listdir(base_directory):
-            # Get the full path of the file
-            full_path = os.path.join(base_directory, files)
-            # Check if the file is a folder
-            if os.path.isdir(full_path):
-                # Add the folder itself to the list
-                children_files.append(full_path)
-                # Get the files inside the folder
-                for dirpath, dirnames, filenames in os.walk(full_path):
-                    # Loop through all the files inside the folder
-                    for file in filenames:
-                        # Get the full path of the file
-                        file_name = os.path.join(dirpath, file)
-                        # Add the file to the list
-                        children_files.append(file_name)
-
-            # If the file is not a folder, just add it to the list
-            else:
-                children_files.append(full_path)
-
-        # Return the list of files
-        return children_files
-    
     # Function to get the size of a folder, this is used to include the size of all the files inside the folder in the table
     def get_folder_size(folder_path):
         total_size = 0
