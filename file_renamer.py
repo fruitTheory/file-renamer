@@ -7,7 +7,6 @@ from send2trash import send2trash
 import ttkbootstrap as ttk
 from ttkbootstrap import Style
 from ttkbootstrap.widgets import Button, Entry
-import subprocess
 
 # Root variables
 root = ttk.Window()
@@ -338,7 +337,7 @@ def file_rename():
         delete_button.pack(pady=10)
         confirm_window.mainloop()
 
-#? what is this for?
+# Temp cmd
 print("Active")
 
 
@@ -458,7 +457,8 @@ def file_delete():
         # The final remove loop.
         for final_file in final_deleted_files:
             #WARNING: removes the files
-            os.remove(final_file)
+            send2trash(final_file)
+            # os.remove(final_file)
 
         return deleted_file_list
 
@@ -472,7 +472,7 @@ button = Button(button_row, text="Rename", command=file_rename)
 button.pack(side=tk.LEFT, padx=5, pady=5, fill=tk.BOTH, expand=True)
 
 #* This button is not really needed anymore, the only reason it has to exist is to refresh the file list if needed
-# Show directory info
+# Refresh directory info
 # button = Button(button_row, text="Show Directory Info", command=file_info)
 # button.pack(side=tk.LEFT, padx=5, pady=5)
 
